@@ -31,7 +31,7 @@ fun ConnectionScreen(viewModel: MainViewModel) {
         ActivityResultContracts.StartActivityForResult(),
     ) { /* result ignored: we react to the HID connection callback instead */ }
 
-    Scaffold { padding ->
+    Scaffold(topBar = { ScanHidTopBar(subtitle = "PC connection") }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -40,7 +40,7 @@ fun ConnectionScreen(viewModel: MainViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("Bluetooth PC connection", style = MaterialTheme.typography.titleLarge)
+            Text("Pair with a PC", style = MaterialTheme.typography.titleLarge)
 
             Text(
                 modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),

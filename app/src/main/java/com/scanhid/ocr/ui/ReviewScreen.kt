@@ -33,7 +33,7 @@ fun ReviewScreen(viewModel: MainViewModel) {
     val lastSendSucceeded by viewModel.lastSendSucceeded.collectAsState()
     var showApproveDialog by remember { mutableStateOf(false) }
 
-    Scaffold { padding ->
+    Scaffold(topBar = { ScanHidTopBar(subtitle = "Review & approve") }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
