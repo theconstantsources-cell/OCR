@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.scanhid.ocr"
-    compileSdk = 30
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.scanhid.ocr"

@@ -14,15 +14,16 @@ Relevant code:
 ## Requirements
 
 - **minSdk 28** (Android 9) - required by `BluetoothHidDevice`. Confirmed compatible with EDA51 units running Android 9/10/11.
+- **compileSdk 34** - required by the AndroidX/Compose/CameraX library versions this project uses (their AAR metadata mandates compiling against API 34+, independent of minSdk/targetSdk).
 - JDK 17
-- Android SDK platform 30 + build-tools 30.0.3 (or matching your EDA51's exact OS version)
+- Android SDK platform 34 + platform-tools
 
 ## Building locally (VS Code + terminal, no Android Studio required)
 
 1. Install JDK 17.
 2. Install the Android **command-line SDK tools** (from the official Android developer downloads page), then:
    ```
-   sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+   sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
    ```
 3. Create `local.properties` in the project root (not committed - it's user/machine-specific):
    ```
