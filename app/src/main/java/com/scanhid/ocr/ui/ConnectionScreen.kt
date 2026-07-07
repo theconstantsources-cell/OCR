@@ -4,9 +4,11 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -18,8 +20,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.scanhid.ocr.MainViewModel
+import com.scanhid.ocr.R
 import com.scanhid.ocr.bluetooth.HidConnectionState
 
 @Composable
@@ -40,6 +44,12 @@ fun ConnectionScreen(viewModel: MainViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            Image(
+                painter = painterResource(R.drawable.suzuki_logo),
+                contentDescription = "Suzuki",
+                modifier = Modifier.height(40.dp).padding(bottom = 20.dp),
+            )
+
             Text("Pair with a PC", style = MaterialTheme.typography.titleLarge)
 
             Text(

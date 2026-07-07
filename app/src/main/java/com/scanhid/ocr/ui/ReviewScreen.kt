@@ -136,7 +136,7 @@ private fun ConfidenceBadge(confidence: Float?) {
         confidence == null -> MaterialTheme.colorScheme.onSurfaceVariant
         confidence >= 0.8f -> Color(0xFF2E7D4F)
         confidence >= 0.5f -> Color(0xFFB8792B)
-        else -> Color(0xFFC1272D)
+        else -> com.scanhid.ocr.ui.theme.SuzukiRed
     }
     val label = if (confidence == null) "Confidence unavailable" else "Confidence ${(confidence * 100).roundToInt()}%"
 

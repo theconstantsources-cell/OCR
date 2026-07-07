@@ -7,20 +7,22 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Deliberate brand palette (no Material-You dynamic color): garage/pit-lane red as the
-// working accent, graphite neutrals, and a hazard-amber reserved for "not connected yet"
-// state so it never gets confused with the brand accent.
-val ScanHidRed = Color(0xFFC1272D)
-val ScanHidRedLight = Color(0xFFE05A52)
+// Brand palette matched to the client's own Suzuki red/blue instead of a generic
+// invented accent, plus graphite neutrals for everything that isn't the logo itself.
+val SuzukiRed = Color(0xFFE4002B)
+val SuzukiRedLight = Color(0xFFEF5B6E)
+val SuzukiBlue = Color(0xFF004C97)
+val SuzukiBlueLight = Color(0xFF6E9FCE)
 val ScanHidGraphiteDark = Color(0xFF131415)
 val ScanHidSurfaceDark = Color(0xFF1C1E20)
 val ScanHidGraphiteLight = Color(0xFFF1F2F0)
 val ScanHidSurfaceLight = Color(0xFFFFFFFF)
 
 private val ScanHidDarkColors = darkColorScheme(
-    primary = ScanHidRedLight,
+    primary = SuzukiRedLight,
     onPrimary = Color(0xFF2A0A08),
-    secondary = Color(0xFFB8C0C6),
+    secondary = SuzukiBlueLight,
+    onSecondary = Color(0xFF00192E),
     background = ScanHidGraphiteDark,
     onBackground = Color(0xFFECEDEC),
     surface = ScanHidSurfaceDark,
@@ -31,9 +33,10 @@ private val ScanHidDarkColors = darkColorScheme(
 )
 
 private val ScanHidLightColors = lightColorScheme(
-    primary = ScanHidRed,
+    primary = SuzukiRed,
     onPrimary = Color(0xFFFFFFFF),
-    secondary = Color(0xFF4B5359),
+    secondary = SuzukiBlue,
+    onSecondary = Color(0xFFFFFFFF),
     background = ScanHidGraphiteLight,
     onBackground = Color(0xFF1B1D1F),
     surface = ScanHidSurfaceLight,
