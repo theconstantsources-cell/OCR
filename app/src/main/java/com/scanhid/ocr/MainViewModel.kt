@@ -31,6 +31,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _recognizedText = MutableStateFlow("")
     val recognizedText: StateFlow<String> = _recognizedText
 
+    private val _ocrConfidence = MutableStateFlow<Float?>(null)
+    val ocrConfidence: StateFlow<Float?> = _ocrConfidence
+
     private val _isProcessingOcr = MutableStateFlow(false)
     val isProcessingOcr: StateFlow<Boolean> = _isProcessingOcr
 
@@ -53,8 +56,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isProcessingOcr.value = true
         _lastSendSucceeded.value = null
         viewModelScope.launch {
-            val text = runCatching { ocrProcessor.recognize(bitmap) }.getOrDefault("")
-            _recognizedText.value = text
+            val result = runCatching { ocrProcessor.recognize(bitmap) }.getOrNull()
+            _recognizedText.value = result?.text.orEmpty()
+            _ocrConfidence.value = result?.confidence
             _isProcessingOcr.value = false
         }
     }
@@ -66,6 +70,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun retakePhoto() {
         _capturedBitmap.value = null
         _recognizedText.value = ""
+        _ocrConfidence.value = null
         _currentScreen.value = AppScreen.CAPTURE
     }
 
