@@ -7,10 +7,13 @@ import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.Executor
+
+private const val TAG = "ScanHid"
 
 enum class HidConnectionState {
     UNREGISTERED,
@@ -44,6 +47,7 @@ class HidKeyboardManager(private val context: Context) {
 
     private val hidCallback = object : BluetoothHidDevice.Callback() {
         override fun onAppStatusChanged(pluggedDevice: BluetoothDevice?, registered: Boolean) {
+            Log.d(TAG, "onAppStatusChanged: registered=$registered device=${pluggedDevice?.address}")
             _connectionState.value = if (registered) {
                 HidConnectionState.REGISTERED_WAITING_FOR_PC
             } else {
@@ -52,6 +56,7 @@ class HidKeyboardManager(private val context: Context) {
         }
 
         override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
+            Log.d(TAG, "onConnectionStateChanged: device=${device?.address} state=$state")
             when (state) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     connectedDevice = device
@@ -71,8 +76,12 @@ class HidKeyboardManager(private val context: Context) {
 
     private val profileListener = object : BluetoothProfile.ServiceListener {
         override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
+            Log.d(TAG, "onServiceConnected: profile=$profile proxy=$proxy")
             if (profile != BluetoothProfile.HID_DEVICE) return
-            val device = proxy as? BluetoothHidDevice ?: return
+            val device = proxy as? BluetoothHidDevice ?: run {
+                Log.e(TAG, "onServiceConnected: proxy was not a BluetoothHidDevice")
+                return
+            }
             hidDevice = device
 
             val sdpSettings = BluetoothHidDeviceAppSdpSettings(
@@ -83,16 +92,24 @@ class HidKeyboardManager(private val context: Context) {
                 HidReportDescriptor.DESCRIPTOR,
             )
 
-            device.registerApp(
-                sdpSettings,
-                null,
-                null,
-                immediateExecutor,
-                hidCallback,
-            )
+            try {
+                val submitted = device.registerApp(
+                    sdpSettings,
+                    null,
+                    null,
+                    immediateExecutor,
+                    hidCallback,
+                )
+                Log.d(TAG, "registerApp() call submitted=$submitted (this is not final success - wait for onAppStatusChanged)")
+            } catch (e: SecurityException) {
+                Log.e(TAG, "registerApp() threw SecurityException - missing BLUETOOTH_CONNECT permission?", e)
+            } catch (e: Exception) {
+                Log.e(TAG, "registerApp() threw an unexpected exception", e)
+            }
         }
 
         override fun onServiceDisconnected(profile: Int) {
+            Log.d(TAG, "onServiceDisconnected: profile=$profile")
             if (profile == BluetoothProfile.HID_DEVICE) {
                 hidDevice = null
                 _connectionState.value = HidConnectionState.UNREGISTERED
@@ -102,8 +119,16 @@ class HidKeyboardManager(private val context: Context) {
 
     /** Call once (e.g. from Application/first Activity) to start advertising as a HID keyboard. */
     fun register() {
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
-        adapter.getProfileProxy(context, profileListener, BluetoothProfile.HID_DEVICE)
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null) {
+            Log.e(TAG, "register(): BluetoothAdapter.getDefaultAdapter() returned null - no Bluetooth hardware?")
+            return
+        }
+        if (!adapter.isEnabled) {
+            Log.w(TAG, "register(): Bluetooth adapter is present but not enabled")
+        }
+        val requested = adapter.getProfileProxy(context, profileListener, BluetoothProfile.HID_DEVICE)
+        Log.d(TAG, "register(): getProfileProxy(HID_DEVICE) requested=$requested")
     }
 
     fun unregister() {
