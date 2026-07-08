@@ -1,11 +1,23 @@
 package com.scanhid.ocr.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+// One consistent rounded-corner language app-wide instead of ad hoc corner radii per screen.
+val ScanHidShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(18.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
 
 // Brand palette matched to the client's own Suzuki red/blue instead of a generic
 // invented accent, plus graphite neutrals for everything that isn't the logo itself.
@@ -53,6 +65,7 @@ fun ScanHidOcrTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) ScanHidDarkColors else ScanHidLightColors,
+        shapes = ScanHidShapes,
         content = content,
     )
 }

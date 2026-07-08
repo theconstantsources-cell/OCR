@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -40,7 +41,7 @@ fun ConnectionScreen(viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -66,18 +67,21 @@ fun ConnectionScreen(viewModel: MainViewModel) {
             )
 
             if (connectionState != HidConnectionState.CONNECTED) {
-                Button(onClick = {
-                    val intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
-                        putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300)
-                    }
-                    discoverableLauncher.launch(intent)
-                }) {
+                Button(
+                    onClick = {
+                        val intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
+                            putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300)
+                        }
+                        discoverableLauncher.launch(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     Text("Make discoverable (5 min)")
                 }
             }
 
             OutlinedButton(
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 onClick = viewModel::goToCaptureScreen,
             ) {
                 Text("Back to scanning")
