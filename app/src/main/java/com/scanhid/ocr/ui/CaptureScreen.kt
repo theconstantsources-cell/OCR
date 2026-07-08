@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.scanhid.ocr.MainViewModel
-import com.scanhid.ocr.bluetooth.HidConnectionState
+import com.scanhid.ocr.bluetooth.PcConnectionState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,7 +41,7 @@ fun CaptureScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
-    val connectionState by viewModel.hidConnectionState.collectAsState()
+    val connectionState by viewModel.pcConnectionState.collectAsState()
 
     val cameraController = remember {
         com.scanhid.ocr.camera.CameraController(context)
@@ -119,11 +119,11 @@ fun CaptureScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-fun ConnectionStatusChip(state: HidConnectionState, onClick: () -> Unit) {
+fun ConnectionStatusChip(state: PcConnectionState, onClick: () -> Unit) {
     val label = when (state) {
-        HidConnectionState.UNREGISTERED -> "Starting..."
-        HidConnectionState.REGISTERED_WAITING_FOR_PC -> "Not paired"
-        HidConnectionState.CONNECTED -> "Connected"
+        PcConnectionState.DISCONNECTED -> "Not connected"
+        PcConnectionState.CONNECTING -> "Connecting..."
+        PcConnectionState.CONNECTED -> "Connected"
     }
     SuggestionChip(
         onClick = onClick,

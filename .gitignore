@@ -9,3 +9,7 @@
 .cxx
 app/build/
 app/release/
+
+# .NET (windows-companion)
+windows-companion/bin/
+windows-companion/obj/

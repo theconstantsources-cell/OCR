@@ -4,9 +4,9 @@ import android.app.Application
 import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.scanhid.ocr.bluetooth.HidConnectionState
-import com.scanhid.ocr.bluetooth.HidKeyCodes
-import com.scanhid.ocr.bluetooth.HidKeyboardManager
+import com.scanhid.ocr.bluetooth.BluetoothSppManager
+import com.scanhid.ocr.bluetooth.PairedDeviceInfo
+import com.scanhid.ocr.bluetooth.PcConnectionState
 import com.scanhid.ocr.ocr.OcrProcessor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,11 +16,15 @@ enum class AppScreen { CAPTURE, REVIEW, CONNECTION }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val hidKeyboardManager = HidKeyboardManager(application)
+    private val sppManager = BluetoothSppManager(application)
     private val ocrProcessor = OcrProcessor()
 
-    val hidConnectionState: StateFlow<HidConnectionState> = hidKeyboardManager.connectionState
-    val connectedDeviceName: StateFlow<String?> = hidKeyboardManager.connectedDeviceName
+    val pcConnectionState: StateFlow<PcConnectionState> = sppManager.connectionState
+    val connectedDeviceName: StateFlow<String?> = sppManager.connectedDeviceName
+    val connectionError: StateFlow<String?> = sppManager.lastError
+
+    private val _bondedDevices = MutableStateFlow<List<PairedDeviceInfo>>(emptyList())
+    val bondedDevices: StateFlow<List<PairedDeviceInfo>> = _bondedDevices
 
     private val _currentScreen = MutableStateFlow(AppScreen.CAPTURE)
     val currentScreen: StateFlow<AppScreen> = _currentScreen
@@ -40,14 +44,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastSendSucceeded = MutableStateFlow<Boolean?>(null)
     val lastSendSucceeded: StateFlow<Boolean?> = _lastSendSucceeded
 
-    fun startHidAdvertising() = hidKeyboardManager.register()
-
     fun goToConnectionScreen() {
+        refreshBondedDevices()
         _currentScreen.value = AppScreen.CONNECTION
     }
 
     fun goToCaptureScreen() {
         _currentScreen.value = AppScreen.CAPTURE
+    }
+
+    fun refreshBondedDevices() {
+        _bondedDevices.value = sppManager.bondedDevices()
+    }
+
+    fun connectToDevice(address: String) {
+        viewModelScope.launch {
+            sppManager.connectTo(address)
+        }
     }
 
     fun onPhotoCaptured(bitmap: Bitmap) {
@@ -76,19 +89,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Called after the user confirms the "send this to the PC?" approval dialog. */
     fun approveAndSend() {
-        val text = _recognizedText.value
+        // Trailing tab so, e.g., an Excel selection advances to the next cell.
+        val text = _recognizedText.value + "\t"
         viewModelScope.launch {
             _lastSendSucceeded.value = null
-            val succeeded = runCatching {
-                hidKeyboardManager.typeText(text, trailingKey = HidKeyCodes.KEYCODE_TAB)
-            }.getOrDefault(false)
+            val succeeded = sppManager.sendText(text)
             _lastSendSucceeded.value = succeeded
             if (succeeded) retakePhoto()
         }
     }
 
     override fun onCleared() {
-        hidKeyboardManager.unregister()
+        sppManager.disconnect()
         super.onCleared()
     }
 }

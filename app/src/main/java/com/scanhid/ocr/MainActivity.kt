@@ -31,11 +31,8 @@ class MainActivity : ComponentActivity() {
             ScanHidOcrTheme {
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions(),
-                ) { result ->
-                    if (result.values.all { it }) {
-                        viewModel.startHidAdvertising()
-                    }
-                }
+                ) { /* Bluetooth connection is only attempted once the user picks a device
+                       on the Connection screen, so there's nothing to kick off here. */ }
 
                 LaunchedEffect(Unit) {
                     permissionLauncher.launch(requiredPermissions)
