@@ -1,4 +1,4 @@
-# ScanHid OCR
+# AI ScanHid
 
 Android app for Honeywell EDA51 (and similar rugged Android scanners): capture a photo of a document, run on-device OCR, let the operator review/edit the text, then "type" the approved text onto a Bluetooth-paired PC via HID keyboard emulation - wherever the PC's cursor currently is (an Excel cell, a text field, anything with keyboard focus).
 

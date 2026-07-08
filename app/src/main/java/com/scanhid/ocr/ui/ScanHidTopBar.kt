@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,17 +31,18 @@ fun ScanHidTopBar(subtitle: String? = null, trailing: @Composable () -> Unit = {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Full logo, uncropped - width scales automatically to preserve its aspect ratio.
                 Image(
-                    painter = painterResource(R.drawable.suzuki_emblem),
+                    painter = painterResource(R.drawable.suzuki_logo),
                     contentDescription = "Suzuki",
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.height(26.dp),
                 )
-                Column(modifier = Modifier.padding(start = 8.dp)) {
+                Column(modifier = Modifier.padding(start = 10.dp)) {
                     Text(
-                        "SCANHID",
+                        "AI SCANHID",
                         fontWeight = FontWeight.Black,
-                        fontSize = 18.sp,
-                        letterSpacing = 1.5.sp,
+                        fontSize = 16.sp,
+                        letterSpacing = 1.2.sp,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     if (subtitle != null) {
