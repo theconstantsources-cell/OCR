@@ -92,7 +92,7 @@ fun ReviewScreen(viewModel: MainViewModel) {
 
             if (gallerySaved != null) {
                 Text(
-                    if (gallerySaved == true) "Saved to Gallery (AI Scan album)" else "Couldn't save to Gallery",
+                    if (gallerySaved == true) "Saved to Gallery (AI Scan album, text saved as a .txt file alongside it)" else "Couldn't save to Gallery",
                     color = if (gallerySaved == true) Color(0xFF2E7D4F) else SuzukiRed,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(top = 6.dp),

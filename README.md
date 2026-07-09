@@ -67,7 +67,7 @@ Leave it running in a terminal window while you use the app - it prints what it'
 1. Point the camera at the document and tap **Scan**.
 2. Review the extracted text and its confidence level bar on the next screen; edit the text if OCR made mistakes.
 3. Tap **Approve & Send to PC** and confirm the popup.
-4. The text is typed into whatever has keyboard focus on the connected PC, followed by a Tab keystroke (so, e.g., an Excel selection advances to the next cell). At the same time, the photo is saved into the phone's Gallery (in its own "AI Scan" album) with the approved text embedded as EXIF metadata (`ImageDescription`/`UserComment`) - this happens regardless of whether the PC send succeeded, since the scan is still worth archiving even if the PC wasn't reachable at that moment.
+4. The text is typed into whatever has keyboard focus on the connected PC, followed by a Tab keystroke (so, e.g., an Excel selection advances to the next cell). At the same time, the photo is saved into the phone's Gallery (in its own "AI Scan" album) with the approved text embedded as EXIF metadata (`ImageDescription`/`UserComment`) **and** as a plain `.txt` file saved right alongside the photo in that same album folder - this happens regardless of whether the PC send succeeded, since the scan is still worth archiving even if the PC wasn't reachable at that moment.
 
 ## Known limitations
 
@@ -75,7 +75,7 @@ Leave it running in a terminal window while you use the app - it prints what it'
 - The Windows companion program must be running on the target PC for text delivery to work - it runs from the system tray and registers itself to start automatically at Windows login after its first run (see its README).
 - Typing speed includes a small delay between keystrokes (8ms) to avoid dropped characters; very long extracted text will take a few seconds to fully type out.
 - OCR runs fully on-device via ML Kit (no internet required), which favors printed/typed Latin-script text; accuracy on handwriting will be lower. ML Kit's confidence score is also known to be unpopulated on some Play Services versions - the app shows "Unavailable" rather than a fabricated percentage in that case.
-- The extracted text is genuinely embedded in each saved photo's EXIF metadata, but whether your phone's Gallery app *displays* it in its "Details"/"Info" panel depends on that app - some show a description field prominently, others don't surface it at all even though it's really in the file.
+- The extracted text is embedded in each saved photo's EXIF metadata, but whether your phone's Gallery app *displays* it in its "Details"/"Info" panel depends on that app - **Google Photos, the default Gallery on most Android/GMS devices, does not show it at all**, even though it's genuinely written to the file. Because of that, the same text is also saved as a plain `.txt` file with a matching name right next to the photo, in the same "Pictures/AI Scan" folder - open that folder in any file manager app (not Photos) to see both files and read the `.txt` directly.
 
 ## Verification status
 
