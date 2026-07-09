@@ -128,7 +128,7 @@ class BluetoothSppManager(private val context: Context) {
 
     @SuppressLint("DiscouragedPrivateApi")
     private fun createRfcommSocketOnChannel(device: BluetoothDevice, channel: Int): BluetoothSocket {
-        val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+        val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType!!)
         return method.invoke(device, channel) as BluetoothSocket
     }
 
