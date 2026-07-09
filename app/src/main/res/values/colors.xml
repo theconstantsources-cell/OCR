@@ -1,4 +1,4 @@
 <resources>
-    <!-- White backdrop, matching how Suzuki presents its own emblem in official contexts. -->
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Suzuki brand blue backdrop behind the red "S" emblem. -->
+    <color name="ic_launcher_background">#004C97</color>
 </resources>

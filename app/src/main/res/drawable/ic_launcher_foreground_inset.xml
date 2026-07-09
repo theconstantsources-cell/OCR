@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shrinks the emblem to Android's recommended adaptive-icon "safe zone" so it isn't
+     clipped by whichever mask shape (circle, squircle, rounded square, ...) the phone's
+     launcher applies. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground"
+    android:inset="16%" />
