@@ -62,7 +62,13 @@ class BluetoothSppManager(private val context: Context) {
     suspend fun connectTo(address: String) {
         connectMutex.withLock {
             val adapter = adapter
-            val device = adapter?.bondedDevices.orEmpty().find { it.address == address }
+            if (adapter == null) {
+                Log.e(TAG, "connectTo: no Bluetooth adapter available")
+                _lastError.value = "Bluetooth isn't available on this device."
+                return@withLock
+            }
+
+            val device = adapter.bondedDevices.orEmpty().find { it.address == address }
             if (device == null) {
                 Log.e(TAG, "connectTo: no bonded device with address $address")
                 _lastError.value = "That device is no longer paired - re-pair it in Windows Bluetooth settings."
