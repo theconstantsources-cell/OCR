@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.UUID
@@ -77,8 +78,7 @@ class BluetoothSppManager(private val context: Context) {
                         ?: throw IllegalStateException("That device is no longer paired - re-pair it in Windows Bluetooth settings")
 
                     adapter.cancelDiscovery()
-                    val newSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
-                    newSocket.connect()
+                    val newSocket = openSocket(device)
                     socket = newSocket
                     _connectedDeviceName.value = device.name
                     _connectionState.value = PcConnectionState.CONNECTED
@@ -92,6 +92,44 @@ class BluetoothSppManager(private val context: Context) {
                 }
             }
         }
+    }
+
+    /**
+     * Connects to [device]'s RFCOMM service. Tries the standard, documented API first
+     * (SDP lookup by UUID), which works on many device/stack combinations. If that fails -
+     * a known issue when an Android client connects to a non-Android RFCOMM server, showing
+     * up as "read failed, socket might closed or timeout, read ret: -1" - falls back to
+     * connecting directly to a fixed RFCOMM channel number via a hidden API, skipping the
+     * SDP lookup entirely. Channel 1 is the conventional default for a single-service SPP
+     * setup like the Windows companion program, so it's tried first in the fallback loop.
+     */
+    private fun openSocket(device: BluetoothDevice): BluetoothSocket {
+        runCatching {
+            val standardSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
+            standardSocket.connect()
+            return standardSocket
+        }.onFailure { e ->
+            Log.w(TAG, "Standard createRfcommSocketToServiceRecord failed (${e.javaClass.simpleName}), trying fixed channels", e)
+        }
+
+        var lastError: Exception? = null
+        for (channel in 1..30) {
+            try {
+                val fallbackSocket = createRfcommSocketOnChannel(device, channel)
+                fallbackSocket.connect()
+                Log.d(TAG, "Connected via fallback RFCOMM channel $channel")
+                return fallbackSocket
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        throw lastError ?: IOException("No RFCOMM channel accepted a connection")
+    }
+
+    @SuppressLint("DiscouragedPrivateApi")
+    private fun createRfcommSocketOnChannel(device: BluetoothDevice, channel: Int): BluetoothSocket {
+        val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+        return method.invoke(device, channel) as BluetoothSocket
     }
 
     /** Sends [text] to the PC to be typed out. Returns false if not currently connected. */
