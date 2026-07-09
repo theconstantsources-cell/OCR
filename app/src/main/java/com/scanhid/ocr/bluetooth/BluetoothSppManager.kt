@@ -61,25 +61,21 @@ class BluetoothSppManager(private val context: Context) {
 
     suspend fun connectTo(address: String) {
         connectMutex.withLock {
-            val adapter = adapter
-            if (adapter == null) {
-                Log.e(TAG, "connectTo: no Bluetooth adapter available")
-                _lastError.value = "Bluetooth isn't available on this device."
-                return@withLock
-            }
-
-            val device = adapter.bondedDevices.orEmpty().find { it.address == address }
-            if (device == null) {
-                Log.e(TAG, "connectTo: no bonded device with address $address")
-                _lastError.value = "That device is no longer paired - re-pair it in Windows Bluetooth settings."
-                return@withLock
-            }
-
             _connectionState.value = PcConnectionState.CONNECTING
             _lastError.value = null
+            Log.d(TAG, "connectTo: starting, address=$address")
 
             withContext(Dispatchers.IO) {
-                runCatching {
+                // Deliberately one try/catch around the *entire* body (including reading the
+                // adapter and bonded-device list), not just the socket connect - any exception
+                // here, including a permission-related SecurityException, must be caught and
+                // surfaced instead of silently escaping this coroutine unseen.
+                try {
+                    val adapter = adapter
+                        ?: throw IllegalStateException("Bluetooth isn't available on this device")
+                    val device = adapter.bondedDevices.orEmpty().find { it.address == address }
+                        ?: throw IllegalStateException("That device is no longer paired - re-pair it in Windows Bluetooth settings")
+
                     adapter.cancelDiscovery()
                     val newSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
                     newSocket.connect()
@@ -87,9 +83,10 @@ class BluetoothSppManager(private val context: Context) {
                     _connectedDeviceName.value = device.name
                     _connectionState.value = PcConnectionState.CONNECTED
                     Log.d(TAG, "Connected to ${device.name}")
-                }.onFailure { e ->
-                    Log.e(TAG, "connectTo failed", e)
-                    _lastError.value = "Couldn't connect - make sure the AI ScanHid receiver program is running on that PC."
+                } catch (e: Throwable) {
+                    val reason = "${e.javaClass.simpleName}: ${e.message}"
+                    Log.e(TAG, "connectTo failed - $reason", e)
+                    _lastError.value = "Couldn't connect ($reason). Make sure the AI ScanHid receiver program is running on the PC."
                     _connectionState.value = PcConnectionState.DISCONNECTED
                     socket = null
                 }
