@@ -1,6 +1,6 @@
-# AI ScanHid Receiver (Windows companion program)
+# AI Scan Receiver (Windows companion program)
 
-A small background program that receives scanned/OCR'd text from the AI ScanHid Android app over Bluetooth and types it out locally - wherever the cursor/focus currently is (an Excel cell, a text field, anything).
+A small background program that receives scanned/OCR'd text from the AI Scan Android app over Bluetooth and types it out locally - wherever the cursor/focus currently is (an Excel cell, a text field, anything).
 
 It does not use the internet or any cloud service. Everything happens over a direct Bluetooth connection to the paired phone.
 
@@ -19,7 +19,7 @@ dotnet run
 
 Leave the terminal window open - it prints status as things happen:
 ```
-AI ScanHid receiver
+AI Scan receiver
 ====================
 Waiting for the phone to connect over Bluetooth...
 (Pair the phone with this PC first via Windows Bluetooth settings, if you haven't already.)
@@ -32,7 +32,7 @@ Waiting for the phone to connect over Bluetooth...
 ## First-time pairing
 
 1. Start this program (`dotnet run`) and leave it running.
-2. On the phone, in the AI ScanHid app's connection screen, tap **Make discoverable to pair**.
+2. On the phone, in the AI Scan app's connection screen, tap **Make discoverable to pair**.
 3. On this PC: Settings -> Bluetooth & devices -> Add device -> Bluetooth -> select the phone. Accept any confirmation prompt (no PIN typing needed for most setups).
 4. Back on the phone's connection screen, tap **Refresh**, then tap **Connect** next to this PC.
 5. The phone should show "Connected to: <this PC's name>", and this program's window should print `Connected: <phone's name>`.

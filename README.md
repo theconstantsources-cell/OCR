@@ -1,4 +1,4 @@
-# AI ScanHid
+# AI Scan
 
 Android app for Honeywell EDA51 (and similar rugged Android scanners): capture a photo of a document, run on-device OCR, let the operator review/edit the text and see the OCR confidence level, then send the approved text to a paired Windows PC - where it's typed out wherever the cursor currently is (an Excel cell, a text field, anything with keyboard focus).
 

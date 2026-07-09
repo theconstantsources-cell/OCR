@@ -86,7 +86,7 @@ class BluetoothSppManager(private val context: Context) {
                 } catch (e: Throwable) {
                     val reason = "${e.javaClass.simpleName}: ${e.message}"
                     Log.e(TAG, "connectTo failed - $reason", e)
-                    _lastError.value = "Couldn't connect ($reason). Make sure the AI ScanHid receiver program is running on the PC."
+                    _lastError.value = "Couldn't connect ($reason). Make sure the AI Scan receiver program is running on the PC."
                     _connectionState.value = PcConnectionState.DISCONNECTED
                     socket = null
                 }

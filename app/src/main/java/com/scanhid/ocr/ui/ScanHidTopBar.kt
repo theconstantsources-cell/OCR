@@ -39,7 +39,7 @@ fun ScanHidTopBar(subtitle: String? = null, trailing: @Composable () -> Unit = {
                 )
                 Column(modifier = Modifier.padding(start = 10.dp)) {
                     Text(
-                        "AI SCANHID",
+                        "AI SCAN",
                         fontWeight = FontWeight.Black,
                         fontSize = 16.sp,
                         letterSpacing = 1.2.sp,

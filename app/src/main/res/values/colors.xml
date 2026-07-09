@@ -1,0 +1,4 @@
+<resources>
+    <!-- White backdrop, matching how Suzuki presents its own emblem in official contexts. -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>

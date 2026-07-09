@@ -6,7 +6,7 @@ using InTheHand.Net.Sockets;
 namespace ScanHidReceiver;
 
 /// <summary>
-/// Receives scanned/OCR'd text from the AI ScanHid Android app over a plain Bluetooth
+/// Receives scanned/OCR'd text from the AI Scan Android app over a plain Bluetooth
 /// RFCOMM (SPP) connection and types it out locally using Windows' own keystroke
 /// injection API - wherever the cursor/focus currently is (Excel, Notepad, anything).
 ///
@@ -22,7 +22,7 @@ internal static class Program
 
     private static async Task Main()
     {
-        Console.WriteLine("AI ScanHid receiver");
+        Console.WriteLine("AI Scan receiver");
         Console.WriteLine("====================");
         Console.WriteLine("Waiting for the phone to connect over Bluetooth...");
         Console.WriteLine("(Pair the phone with this PC first via Windows Bluetooth settings, if you haven't already.)");
@@ -30,7 +30,7 @@ internal static class Program
 
         using var listener = new BluetoothListener(ServiceUuid)
         {
-            ServiceName = "AI ScanHid Receiver",
+            ServiceName = "AI Scan Receiver",
         };
         listener.Start();
 
