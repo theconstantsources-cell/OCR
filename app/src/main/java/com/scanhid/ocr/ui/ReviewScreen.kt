@@ -41,6 +41,7 @@ fun ReviewScreen(viewModel: MainViewModel) {
     val ocrConfidence by viewModel.ocrConfidence.collectAsState()
     val isProcessing by viewModel.isProcessingOcr.collectAsState()
     val lastSendSucceeded by viewModel.lastSendSucceeded.collectAsState()
+    val gallerySaved by viewModel.gallerySaved.collectAsState()
     var showApproveDialog by remember { mutableStateOf(false) }
 
     Scaffold(topBar = { ScanHidTopBar(subtitle = "Review & approve") }) { padding ->
@@ -86,6 +87,15 @@ fun ReviewScreen(viewModel: MainViewModel) {
                     "Not connected to a PC - open the Bluetooth screen and pair first.",
                     color = SuzukiRed,
                     modifier = Modifier.padding(top = 10.dp),
+                )
+            }
+
+            if (gallerySaved != null) {
+                Text(
+                    if (gallerySaved == true) "Saved to Gallery (AI Scan album)" else "Couldn't save to Gallery",
+                    color = if (gallerySaved == true) Color(0xFF2E7D4F) else SuzukiRed,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
 

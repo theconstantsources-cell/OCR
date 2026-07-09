@@ -21,6 +21,10 @@ class MainActivity : ComponentActivity() {
 
         val requiredPermissions = buildList {
             add(Manifest.permission.CAMERA)
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                // Pre-scoped-storage (Android 9): needed to save scans into the Gallery.
+                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 add(Manifest.permission.BLUETOOTH_CONNECT)
                 add(Manifest.permission.BLUETOOTH_ADVERTISE)

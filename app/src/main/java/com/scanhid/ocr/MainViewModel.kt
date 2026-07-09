@@ -8,6 +8,7 @@ import com.scanhid.ocr.bluetooth.BluetoothSppManager
 import com.scanhid.ocr.bluetooth.PairedDeviceInfo
 import com.scanhid.ocr.bluetooth.PcConnectionState
 import com.scanhid.ocr.ocr.OcrProcessor
+import com.scanhid.ocr.storage.GallerySaver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -44,6 +45,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastSendSucceeded = MutableStateFlow<Boolean?>(null)
     val lastSendSucceeded: StateFlow<Boolean?> = _lastSendSucceeded
 
+    private val _gallerySaved = MutableStateFlow<Boolean?>(null)
+    val gallerySaved: StateFlow<Boolean?> = _gallerySaved
+
     fun goToConnectionScreen() {
         refreshBondedDevices()
         _currentScreen.value = AppScreen.CONNECTION
@@ -68,6 +72,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentScreen.value = AppScreen.REVIEW
         _isProcessingOcr.value = true
         _lastSendSucceeded.value = null
+        _gallerySaved.value = null
         viewModelScope.launch {
             val result = runCatching { ocrProcessor.recognize(bitmap) }.getOrNull()
             _recognizedText.value = result?.text.orEmpty()
@@ -84,17 +89,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _capturedBitmap.value = null
         _recognizedText.value = ""
         _ocrConfidence.value = null
+        _gallerySaved.value = null
         _currentScreen.value = AppScreen.CAPTURE
     }
 
-    /** Called after the user confirms the "send this to the PC?" approval dialog. */
+    /**
+     * Called after the user confirms the "send this to the PC?" approval dialog. Sends
+     * the text to the PC and, independent of whether that succeeds, saves the photo into
+     * the Gallery with the approved text embedded as EXIF metadata - the archived record
+     * is worth keeping even if the PC happened to be disconnected at that moment.
+     */
     fun approveAndSend() {
-        // Trailing tab so, e.g., an Excel selection advances to the next cell.
-        val text = _recognizedText.value + "\t"
+        val approvedText = _recognizedText.value
+        val bitmap = _capturedBitmap.value
         viewModelScope.launch {
             _lastSendSucceeded.value = null
-            val succeeded = sppManager.sendText(text)
+            // Trailing tab so, e.g., an Excel selection advances to the next cell.
+            val succeeded = sppManager.sendText(approvedText + "\t")
             _lastSendSucceeded.value = succeeded
+
+            if (bitmap != null) {
+                _gallerySaved.value = GallerySaver.save(getApplication(), bitmap, approvedText)
+            }
+
             if (succeeded) retakePhoto()
         }
     }
