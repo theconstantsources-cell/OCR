@@ -34,7 +34,9 @@ object GallerySaver {
         withContext(Dispatchers.IO) {
             runCatching {
                 val resolver = context.contentResolver
-                val baseName = "AIScan_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}"
+                val scanId = nextScanId(context)
+                val idLabel = scanId.toString().padStart(4, '0')
+                val baseName = "AIScan_$idLabel_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}"
                 val fileName = "$baseName.jpg"
 
                 val values = ContentValues().apply {
@@ -84,6 +86,27 @@ object GallerySaver {
                 true
             }.getOrDefault(false)
         }
+
+    /**
+     * Picks the next sequential scan number by counting what's already saved in the album -
+     * same philosophy as everything else here: derived live from what's on disk rather than
+     * tracked in a separate counter/database that could drift out of sync.
+     */
+    private fun nextScanId(context: Context): Int =
+        runCatching {
+            val resolver = context.contentResolver
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? AND " +
+                    "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ?"
+                val args = arrayOf("${Environment.DIRECTORY_PICTURES}/$ALBUM_NAME%", "AIScan_%")
+                resolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Images.Media._ID), selection, args, null)
+                    ?.use { it.count } ?: 0
+            } else {
+                @Suppress("DEPRECATION")
+                val albumDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), ALBUM_NAME)
+                albumDir.listFiles { f -> f.name.startsWith("AIScan_") && f.name.endsWith(".jpg") }?.size ?: 0
+            }
+        }.getOrDefault(0) + 1
 
     /**
      * Writes the text as its own ".txt" file alongside the photo in the same album folder -

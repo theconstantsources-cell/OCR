@@ -273,7 +273,10 @@ private fun HistoryRow(item: ScanHistoryItem) {
                 }
                 Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
                     Text(
-                        formatTimestamp(item.timestampMillis),
+                        buildString {
+                            if (item.scanId != null) append("Scan #${item.scanId}  •  ")
+                            append(formatTimestamp(item.timestampMillis))
+                        },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

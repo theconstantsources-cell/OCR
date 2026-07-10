@@ -14,7 +14,14 @@ data class ScanHistoryItem(
     val imageUri: Uri,
     val text: String,
     val timestampMillis: Long,
+    val scanId: Int?,
 )
+
+// Anchored to the full base name (no extension) so it only matches the current three-part
+// naming scheme "AIScan_<id>_<yyyyMMdd>_<HHmmss>" - older two-part files saved before scan
+// IDs existed ("AIScan_<yyyyMMdd>_<HHmmss>") correctly fail to match instead of having their
+// date digits misread as an ID.
+private val SCAN_ID_PATTERN = Regex("""AIScan_(\d+)_\d{8}_\d{6}""")
 
 /**
  * Reads back everything GallerySaver has written to the "Pictures/AI Scan" album - this is
@@ -64,6 +71,7 @@ object ScanHistoryRepository {
                         imageUri = uri,
                         text = readSidecarText(context, baseName),
                         timestampMillis = dateAddedSeconds * 1000L,
+                        scanId = SCAN_ID_PATTERN.find(baseName)?.groupValues?.get(1)?.toIntOrNull(),
                     )
                 }
             }
