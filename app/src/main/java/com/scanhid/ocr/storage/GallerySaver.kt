@@ -36,7 +36,7 @@ object GallerySaver {
                 val resolver = context.contentResolver
                 val scanId = nextScanId(context)
                 val idLabel = scanId.toString().padStart(4, '0')
-                val baseName = "AIScan_$idLabel_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}"
+                val baseName = "AIScan_${idLabel}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}"
                 val fileName = "$baseName.jpg"
 
                 val values = ContentValues().apply {
