@@ -14,5 +14,6 @@ fun AppRoot(viewModel: MainViewModel) {
         AppScreen.CAPTURE -> CaptureScreen(viewModel)
         AppScreen.REVIEW -> ReviewScreen(viewModel)
         AppScreen.CONNECTION -> ConnectionScreen(viewModel)
+        AppScreen.HISTORY -> HistoryScreen(viewModel)
     }
 }
