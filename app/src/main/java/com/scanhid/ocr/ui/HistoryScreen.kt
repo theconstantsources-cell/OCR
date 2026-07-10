@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -320,8 +321,11 @@ private fun ScanDetailDialog(item: ScanHistoryItem, onDismiss: () -> Unit) {
                             if (item.scanId != null) append("Scan #${item.scanId}  •  ")
                             append(formatTimestamp(item.timestampMillis))
                         },
+                        modifier = Modifier.weight(1f).padding(end = 8.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     OutlinedButton(onClick = onDismiss) { Text("Close") }
                 }
