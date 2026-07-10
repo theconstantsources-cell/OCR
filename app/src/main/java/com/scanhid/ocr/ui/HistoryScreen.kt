@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
@@ -78,6 +80,9 @@ fun HistoryScreen(viewModel: MainViewModel) {
     val datesWithScans = itemsByDate.keys
     val visibleItems = if (selectedDate != null) itemsByDate[selectedDate].orEmpty() else items
     var selectedItem by remember { mutableStateOf<ScanHistoryItem?>(null) }
+    // Collapsed by default so the scan list (the thing people scroll through most) gets the
+    // screen space - the calendar is for jumping to a specific day, not something to keep open.
+    var calendarExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -94,6 +99,8 @@ fun HistoryScreen(viewModel: MainViewModel) {
                 visibleMonth = visibleMonth,
                 selectedDate = selectedDate,
                 datesWithScans = datesWithScans,
+                expanded = calendarExpanded,
+                onToggleExpanded = { calendarExpanded = !calendarExpanded },
                 onPrevMonth = { viewModel.changeHistoryMonth(-1) },
                 onNextMonth = { viewModel.changeHistoryMonth(1) },
                 onSelectDate = viewModel::selectHistoryDate,
@@ -128,7 +135,11 @@ fun HistoryScreen(viewModel: MainViewModel) {
                 }
                 else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                     items(visibleItems, key = { it.imageUri.toString() }) { item ->
-                        HistoryRow(item, onClick = { selectedItem = item })
+                        HistoryRow(
+                            item,
+                            onClick = { selectedItem = item },
+                            onDelete = { viewModel.deleteScan(item) },
+                        )
                     }
                 }
             }
@@ -145,28 +156,42 @@ private fun MonthCalendar(
     visibleMonth: YearMonth,
     selectedDate: LocalDate?,
     datesWithScans: Set<LocalDate>,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onPrevMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onSelectDate: (LocalDate) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onToggleExpanded).padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onPrevMonth) {
-                Text("‹", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            }
             Text(
-                visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) + " ${visibleMonth.year}",
+                (if (expanded) visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) + " ${visibleMonth.year}" else "Calendar"),
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
             )
-            IconButton(onClick = onNextMonth) {
-                Text("›", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (expanded) {
+                    IconButton(onClick = onPrevMonth) {
+                        Text("‹", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    }
+                    IconButton(onClick = onNextMonth) {
+                        Text("›", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    if (expanded) "▴ Hide" else "▾ Show",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
         }
+
+        if (!expanded) return@Column
 
         // Sunday-first, to match the day-grid column order below.
         val weekdayHeaders = listOf(
@@ -260,8 +285,9 @@ private fun RowScope.DayCell(
 }
 
 @Composable
-private fun HistoryRow(item: ScanHistoryItem, onClick: () -> Unit) {
+private fun HistoryRow(item: ScanHistoryItem, onClick: () -> Unit, onDelete: () -> Unit) {
     val thumbnail = rememberScanImage(item, sampleSize = 4)
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
@@ -299,7 +325,27 @@ private fun HistoryRow(item: ScanHistoryItem, onClick: () -> Unit) {
                     maxLines = 2,
                 )
             }
+            IconButton(onClick = { showDeleteConfirm = true }) {
+                Text("🗑", fontSize = 18.sp) // trash bin emoji
+            }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete this scan?") },
+            text = { Text("The photo and its extracted text will be permanently deleted from this device. This can't be undone.") },
+            confirmButton = {
+                Button(onClick = {
+                    showDeleteConfirm = false
+                    onDelete()
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

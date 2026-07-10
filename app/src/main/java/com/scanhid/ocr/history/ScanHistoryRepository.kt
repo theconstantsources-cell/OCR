@@ -19,6 +19,7 @@ data class ScanHistoryItem(
     val text: String,
     val timestampMillis: Long,
     val scanId: Int?,
+    val baseName: String,
 )
 
 // Anchored to the full base name (no extension) so it only matches the current three-part
@@ -77,11 +78,46 @@ object ScanHistoryRepository {
                         text = readScanText(context, uri, baseName),
                         timestampMillis = dateAddedSeconds * 1000L,
                         scanId = SCAN_ID_PATTERN.find(baseName)?.groupValues?.get(1)?.toIntOrNull(),
+                        baseName = baseName,
                     )
                 }
             }
             items
         }.getOrDefault(emptyList())
+    }
+
+    /** Deletes the photo and its matching .txt sidecar (if any). */
+    suspend fun delete(context: Context, item: ScanHistoryItem): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            context.contentResolver.delete(item.imageUri, null, null)
+            deleteSidecarText(context, item.baseName)
+            true
+        }.getOrDefault(false)
+    }
+
+    private fun deleteSidecarText(context: Context, baseName: String) {
+        runCatching {
+            val resolver = context.contentResolver
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+                val selection = "${MediaStore.Files.FileColumns.RELATIVE_PATH} LIKE ? AND " +
+                    "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ?"
+                val args = arrayOf("$ALBUM_RELATIVE_PATH%", "$baseName.txt")
+                resolver.query(MediaStore.Files.getContentUri("external"), projection, selection, args, null)?.use { c ->
+                    if (c.moveToFirst()) {
+                        val id = c.getLong(c.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                        val uri = ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), id)
+                        resolver.delete(uri, null, null)
+                    }
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                val albumDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), ALBUM_NAME)
+                File(albumDir, "$baseName.txt").delete()
+            }
+        }.onFailure { e ->
+            Log.e(TAG, "deleteSidecarText threw for $baseName", e)
+        }
     }
 
     private fun readScanText(context: Context, imageUri: Uri, baseName: String): String {

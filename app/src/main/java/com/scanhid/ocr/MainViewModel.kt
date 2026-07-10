@@ -96,6 +96,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _historySelectedDate.value = if (_historySelectedDate.value == date) null else date
     }
 
+    fun deleteScan(item: ScanHistoryItem) {
+        viewModelScope.launch {
+            if (ScanHistoryRepository.delete(getApplication(), item)) {
+                _historyItems.value = _historyItems.value.filterNot { it.imageUri == item.imageUri }
+            }
+        }
+    }
+
     fun refreshBondedDevices() {
         _bondedDevices.value = sppManager.bondedDevices()
     }
