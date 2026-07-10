@@ -6,9 +6,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+
+private const val TAG = "ScanHidHistory"
 
 data class ScanHistoryItem(
     val imageUri: Uri,
@@ -26,8 +30,9 @@ private val SCAN_ID_PATTERN = Regex("""AIScan_(\d+)_\d{8}_\d{6}""")
 /**
  * Reads back everything GallerySaver has written to the "Pictures/AI Scan" album - this is
  * the same on-device data the History screen shows, not a separate store. Each photo's text
- * comes from its matching ".txt" sidecar rather than EXIF, since that's the copy guaranteed
- * to have been written successfully (EXIF write failures don't undo the image/sidecar save).
+ * is read straight from that photo's own EXIF ImageDescription first (no extra lookup needed,
+ * since we already have that exact image's Uri), falling back to the matching ".txt" sidecar
+ * only if the EXIF field ever comes back empty.
  */
 object ScanHistoryRepository {
 
@@ -69,7 +74,7 @@ object ScanHistoryRepository {
                     val baseName = name.substringBeforeLast('.')
                     items += ScanHistoryItem(
                         imageUri = uri,
-                        text = readSidecarText(context, baseName),
+                        text = readScanText(context, uri, baseName),
                         timestampMillis = dateAddedSeconds * 1000L,
                         scanId = SCAN_ID_PATTERN.find(baseName)?.groupValues?.get(1)?.toIntOrNull(),
                     )
@@ -78,6 +83,23 @@ object ScanHistoryRepository {
             items
         }.getOrDefault(emptyList())
     }
+
+    private fun readScanText(context: Context, imageUri: Uri, baseName: String): String {
+        val exifText = readExifText(context, imageUri)
+        if (exifText.isNotBlank()) return exifText
+        Log.d(TAG, "readScanText: EXIF empty for $baseName, falling back to .txt sidecar")
+        return readSidecarText(context, baseName)
+    }
+
+    private fun readExifText(context: Context, imageUri: Uri): String =
+        runCatching {
+            context.contentResolver.openInputStream(imageUri)?.use { input ->
+                val exif = ExifInterface(input)
+                exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)
+            }
+        }.onFailure { e ->
+            Log.e(TAG, "readExifText threw for $imageUri", e)
+        }.getOrNull().orEmpty()
 
     private fun readSidecarText(context: Context, baseName: String): String =
         runCatching {

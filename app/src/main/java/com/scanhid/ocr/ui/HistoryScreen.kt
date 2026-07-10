@@ -9,16 +9,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -41,6 +47,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.scanhid.ocr.MainViewModel
 import com.scanhid.ocr.history.ScanHistoryItem
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +76,7 @@ fun HistoryScreen(viewModel: MainViewModel) {
     }
     val datesWithScans = itemsByDate.keys
     val visibleItems = if (selectedDate != null) itemsByDate[selectedDate].orEmpty() else items
+    var selectedItem by remember { mutableStateOf<ScanHistoryItem?>(null) }
 
     Scaffold(
         topBar = {
@@ -118,11 +127,15 @@ fun HistoryScreen(viewModel: MainViewModel) {
                 }
                 else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                     items(visibleItems, key = { it.imageUri.toString() }) { item ->
-                        HistoryRow(item)
+                        HistoryRow(item, onClick = { selectedItem = item })
                     }
                 }
             }
         }
+    }
+
+    selectedItem?.let { item ->
+        ScanDetailDialog(item, onDismiss = { selectedItem = null })
     }
 }
 
@@ -246,46 +259,104 @@ private fun RowScope.DayCell(
 }
 
 @Composable
-private fun HistoryRow(item: ScanHistoryItem) {
-    var expanded by remember { mutableStateOf(false) }
-    val thumbnail = rememberThumbnail(item)
+private fun HistoryRow(item: ScanHistoryItem, onClick: () -> Unit) {
+    val thumbnail = rememberScanImage(item, sampleSize = 4)
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .clip(RoundedCornerShape(10.dp))
-            .clickable { expanded = !expanded },
+            .clickable(onClick = onClick),
         tonalElevation = 1.dp,
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (thumbnail != null) {
-                        Image(bitmap = thumbnail, contentDescription = null, modifier = Modifier.fillMaxSize())
-                    }
+        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (thumbnail != null) {
+                    Image(bitmap = thumbnail, contentDescription = null, modifier = Modifier.fillMaxSize())
                 }
-                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+            }
+            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                Text(
+                    buildString {
+                        if (item.scanId != null) append("Scan #${item.scanId}  •  ")
+                        append(formatTimestamp(item.timestampMillis))
+                    },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    item.text.ifBlank { "(no text)" },
+                    fontSize = 13.sp,
+                    maxLines = 2,
+                )
+            }
+        }
+    }
+}
+
+/** Full-screen view opened by tapping a scan: the photo at a higher resolution, with its full extracted text laid out below it. */
+@Composable
+private fun ScanDetailDialog(item: ScanHistoryItem, onDismiss: () -> Unit) {
+    val image = rememberScanImage(item, sampleSize = 1)
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
                         buildString {
                             if (item.scanId != null) append("Scan #${item.scanId}  •  ")
                             append(formatTimestamp(item.timestampMillis))
                         },
-                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                    )
+                    OutlinedButton(onClick = onDismiss) { Text("Close") }
+                }
+                HorizontalDivider()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (image != null) {
+                            Image(bitmap = image, contentDescription = null, modifier = Modifier.fillMaxWidth())
+                        } else {
+                            Box(modifier = Modifier.fillMaxWidth().height(200.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        "EXTRACTED TEXT",
+                        fontSize = 11.sp,
+                        letterSpacing = 0.06.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        item.text.ifBlank { "(no text)" },
-                        fontSize = 13.sp,
-                        maxLines = if (expanded) Int.MAX_VALUE else 2,
-                    )
+                    Spacer(Modifier.height(8.dp))
+                    SelectionContainer {
+                        Text(item.text.ifBlank { "(no text)" }, fontSize = 15.sp)
+                    }
                 }
             }
         }
@@ -293,14 +364,14 @@ private fun HistoryRow(item: ScanHistoryItem) {
 }
 
 @Composable
-private fun rememberThumbnail(item: ScanHistoryItem): ImageBitmap? {
+private fun rememberScanImage(item: ScanHistoryItem, sampleSize: Int): ImageBitmap? {
     val context = LocalContext.current
-    var bitmap by remember(item.imageUri) { mutableStateOf<ImageBitmap?>(null) }
-    LaunchedEffect(item.imageUri) {
+    var bitmap by remember(item.imageUri, sampleSize) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(item.imageUri, sampleSize) {
         bitmap = withContext(Dispatchers.IO) {
             runCatching {
                 context.contentResolver.openInputStream(item.imageUri)?.use { input ->
-                    val options = BitmapFactory.Options().apply { inSampleSize = 4 }
+                    val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
                     BitmapFactory.decodeStream(input, null, options)?.asImageBitmap()
                 }
             }.getOrNull()
