@@ -19,6 +19,46 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
+/**
+ * A selection rectangle expressed as fractions (0f..1f) of the PreviewView's displayed bounds,
+ * e.g. left=0.1f means 10% in from the view's left edge.
+ */
+data class CropRegion(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+    companion object {
+        /** A wide, short default band centered on the frame - fits a typical single-line label. */
+        val Default = CropRegion(left = 0.12f, top = 0.32f, right = 0.88f, bottom = 0.6f)
+    }
+}
+
+/**
+ * Crops [bitmap] down to the sub-rectangle that was visible under [region] of a PreviewView
+ * measuring [previewWidth] x [previewHeight] px. Assumes the PreviewView's default FILL_CENTER
+ * scaling: the camera frame is scaled up uniformly until it fully covers the view, then centered,
+ * cropping off whatever overflows on one axis - so the frame pixels actually visible on screen are
+ * a centered sub-rectangle of the full captured bitmap, not the whole thing.
+ */
+fun cropToPreviewRegion(bitmap: Bitmap, previewWidth: Int, previewHeight: Int, region: CropRegion): Bitmap {
+    if (previewWidth <= 0 || previewHeight <= 0) return bitmap
+    val imgW = bitmap.width.toFloat()
+    val imgH = bitmap.height.toFloat()
+    val scale = maxOf(previewWidth / imgW, previewHeight / imgH)
+    val visibleImgW = previewWidth / scale
+    val visibleImgH = previewHeight / scale
+    val offsetX = (imgW - visibleImgW) / 2f
+    val offsetY = (imgH - visibleImgH) / 2f
+
+    val left = (offsetX + region.left.coerceIn(0f, 1f) * visibleImgW)
+        .toInt().coerceIn(0, bitmap.width - 1)
+    val top = (offsetY + region.top.coerceIn(0f, 1f) * visibleImgH)
+        .toInt().coerceIn(0, bitmap.height - 1)
+    val right = (offsetX + region.right.coerceIn(0f, 1f) * visibleImgW)
+        .toInt().coerceIn(left + 1, bitmap.width)
+    val bottom = (offsetY + region.bottom.coerceIn(0f, 1f) * visibleImgH)
+        .toInt().coerceIn(top + 1, bitmap.height)
+
+    return Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
+}
+
 /** Wraps CameraX setup + single-photo capture so the UI layer only deals with a Bitmap. */
 class CameraController(private val context: Context) {
 

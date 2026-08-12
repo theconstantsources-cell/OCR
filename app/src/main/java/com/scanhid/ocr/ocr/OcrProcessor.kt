@@ -22,6 +22,14 @@ class OcrProcessor {
         val image = InputImage.fromBitmap(bitmap, 0)
         val result = recognizer.process(image).await()
 
+        // Built explicitly from blocks/lines rather than using result.text directly: ML Kit's
+        // own Text.getText() sometimes joins lines it judges to be a wrapped sentence with a
+        // space instead of a line break, which is wrong for scanned labels/forms where every
+        // detected line is a distinct field. Every recognized line gets its own line here.
+        val text = result.textBlocks.joinToString("\n") { block ->
+            block.lines.joinToString("\n") { it.text }
+        }
+
         // ML Kit's on-device recognizer is known to leave confidence unpopulated on some
         // Play Services versions/devices (it returns 0f rather than a real score in that
         // case) - only report a confidence if at least one word actually came back with a
@@ -35,6 +43,6 @@ class OcrProcessor {
 
         val averageConfidence = if (wordConfidences.isEmpty()) null else wordConfidences.average().toFloat()
 
-        return OcrResult(text = result.text, confidence = averageConfidence)
+        return OcrResult(text = text, confidence = averageConfidence)
     }
 }
