@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import com.scanhid.ocr.MainViewModel
 import com.scanhid.ocr.bluetooth.PcConnectionState
 import com.scanhid.ocr.camera.CropRegion
@@ -159,6 +160,11 @@ fun CaptureScreen(viewModel: MainViewModel) {
                 region = cropRegion,
                 containerSize = previewSize,
                 onRegionChange = { cropRegion = it },
+                // Compose's draw-order guarantee over an embedded AndroidView (the PreviewView
+                // above) is a known rough edge - being later in this Box's children isn't always
+                // enough on its own. An explicit zIndex removes any ambiguity about which layer
+                // paints on top.
+                modifier = Modifier.zIndex(1f),
             )
         }
     }
@@ -174,6 +180,7 @@ private fun CropOverlay(
     region: CropRegion,
     containerSize: IntSize,
     onRegionChange: (CropRegion) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val minSize = 0.1f
     val density = LocalDensity.current
@@ -186,7 +193,7 @@ private fun CropOverlay(
     val currentRegion by rememberUpdatedState(region)
     val currentOnRegionChange by rememberUpdatedState(onRegionChange)
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val rectPx = Rect(
                 left = region.left * size.width,
