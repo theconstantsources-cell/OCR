@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -176,6 +177,14 @@ private fun CropOverlay(
 ) {
     val minSize = 0.1f
     val density = LocalDensity.current
+    // pointerInput(containerSize) only relaunches its gesture-detection coroutine when
+    // containerSize changes (once, right after layout) - without these, the drag handlers below
+    // would keep reading the region/onRegionChange values captured at that one launch forever,
+    // so every drag would compute its new position from the box's original spot instead of
+    // wherever it currently is. rememberUpdatedState keeps them live without restarting the
+    // gesture (which would cancel it) on every recomposition.
+    val currentRegion by rememberUpdatedState(region)
+    val currentOnRegionChange by rememberUpdatedState(onRegionChange)
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -218,14 +227,15 @@ private fun CropOverlay(
                 .pointerInput(containerSize) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
-                        val width = region.right - region.left
-                        val height = region.bottom - region.top
-                        val newLeft = (region.left + dragAmount.x / containerSize.width)
+                        val r = currentRegion
+                        val width = r.right - r.left
+                        val height = r.bottom - r.top
+                        val newLeft = (r.left + dragAmount.x / containerSize.width)
                             .coerceIn(0f, 1f - width)
-                        val newTop = (region.top + dragAmount.y / containerSize.height)
+                        val newTop = (r.top + dragAmount.y / containerSize.height)
                             .coerceIn(0f, 1f - height)
-                        onRegionChange(
-                            region.copy(
+                        currentOnRegionChange(
+                            r.copy(
                                 left = newLeft,
                                 top = newTop,
                                 right = newLeft + width,
@@ -237,34 +247,38 @@ private fun CropOverlay(
         )
 
         CropHandle(xPx = leftPx, yPx = topPx, containerSize = containerSize) { dxFrac, dyFrac ->
-            onRegionChange(
-                region.copy(
-                    left = (region.left + dxFrac).coerceIn(0f, region.right - minSize),
-                    top = (region.top + dyFrac).coerceIn(0f, region.bottom - minSize),
+            val r = currentRegion
+            currentOnRegionChange(
+                r.copy(
+                    left = (r.left + dxFrac).coerceIn(0f, r.right - minSize),
+                    top = (r.top + dyFrac).coerceIn(0f, r.bottom - minSize),
                 ),
             )
         }
         CropHandle(xPx = rightPx, yPx = topPx, containerSize = containerSize) { dxFrac, dyFrac ->
-            onRegionChange(
-                region.copy(
-                    right = (region.right + dxFrac).coerceIn(region.left + minSize, 1f),
-                    top = (region.top + dyFrac).coerceIn(0f, region.bottom - minSize),
+            val r = currentRegion
+            currentOnRegionChange(
+                r.copy(
+                    right = (r.right + dxFrac).coerceIn(r.left + minSize, 1f),
+                    top = (r.top + dyFrac).coerceIn(0f, r.bottom - minSize),
                 ),
             )
         }
         CropHandle(xPx = leftPx, yPx = bottomPx, containerSize = containerSize) { dxFrac, dyFrac ->
-            onRegionChange(
-                region.copy(
-                    left = (region.left + dxFrac).coerceIn(0f, region.right - minSize),
-                    bottom = (region.bottom + dyFrac).coerceIn(region.top + minSize, 1f),
+            val r = currentRegion
+            currentOnRegionChange(
+                r.copy(
+                    left = (r.left + dxFrac).coerceIn(0f, r.right - minSize),
+                    bottom = (r.bottom + dyFrac).coerceIn(r.top + minSize, 1f),
                 ),
             )
         }
         CropHandle(xPx = rightPx, yPx = bottomPx, containerSize = containerSize) { dxFrac, dyFrac ->
-            onRegionChange(
-                region.copy(
-                    right = (region.right + dxFrac).coerceIn(region.left + minSize, 1f),
-                    bottom = (region.bottom + dyFrac).coerceIn(region.top + minSize, 1f),
+            val r = currentRegion
+            currentOnRegionChange(
+                r.copy(
+                    right = (r.right + dxFrac).coerceIn(r.left + minSize, 1f),
+                    bottom = (r.bottom + dyFrac).coerceIn(r.top + minSize, 1f),
                 ),
             )
         }
