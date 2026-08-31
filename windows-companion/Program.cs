@@ -178,7 +178,6 @@ internal static class Keystrokes
     private const int InputKeyboard = 1;
     private const uint KeyEventFUnicode = 0x0004;
     private const uint KeyEventFKeyUp = 0x0002;
-    private const ushort VkReturn = 0x0D;
     private const ushort VkTab = 0x09;
 
     /// Delay between keystrokes; too fast and some apps drop or reorder characters.
@@ -190,8 +189,13 @@ internal static class Keystrokes
         {
             switch (c)
             {
+                // A line break in the scanned text advances to the next field/cell (Tab)
+                // rather than starting a new line within the current one - each recognized
+                // line of a label/form is usually a separate value (e.g. part number,
+                // description, qty), so this lands each one in its own spreadsheet column
+                // or form field instead of stacking them as multi-line text in one box.
                 case '\n':
-                    SendVirtualKey(VkReturn);
+                    SendVirtualKey(VkTab);
                     break;
                 case '\r':
                     break; // paired with \n in CRLF input - already handled by the \n case
