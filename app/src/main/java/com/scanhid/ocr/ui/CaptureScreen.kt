@@ -72,7 +72,7 @@ fun CaptureScreen(viewModel: MainViewModel) {
     }
 
     var previewSize by remember { mutableStateOf(IntSize.Zero) }
-    var cropRegion by remember { mutableStateOf(CropRegion.Default) }
+    val cropRegion by viewModel.cropRegion.collectAsState()
 
     Scaffold(
         topBar = {
@@ -159,7 +159,7 @@ fun CaptureScreen(viewModel: MainViewModel) {
             CropOverlay(
                 region = cropRegion,
                 containerSize = previewSize,
-                onRegionChange = { cropRegion = it },
+                onRegionChange = viewModel::updateCropRegion,
                 // Compose's draw-order guarantee over an embedded AndroidView (the PreviewView
                 // above) is a known rough edge - being later in this Box's children isn't always
                 // enough on its own. An explicit zIndex removes any ambiguity about which layer

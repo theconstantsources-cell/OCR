@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.scanhid.ocr.bluetooth.BluetoothSppManager
 import com.scanhid.ocr.bluetooth.PairedDeviceInfo
 import com.scanhid.ocr.bluetooth.PcConnectionState
+import com.scanhid.ocr.camera.CropRegion
 import com.scanhid.ocr.history.ScanHistoryItem
 import com.scanhid.ocr.history.ScanHistoryRepository
 import com.scanhid.ocr.ocr.OcrProcessor
@@ -63,6 +64,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _historySelectedDate = MutableStateFlow<LocalDate?>(null)
     val historySelectedDate: StateFlow<LocalDate?> = _historySelectedDate
+
+    // Held here rather than as local Composable state so it survives leaving and returning to
+    // the Capture screen (e.g. via Retake, or History and back) - the user's last adjustment is
+    // kept as the starting point next time, but it stays freely draggable/resizable from there.
+    private val _cropRegion = MutableStateFlow(CropRegion.Default)
+    val cropRegion: StateFlow<CropRegion> = _cropRegion
+
+    fun updateCropRegion(region: CropRegion) {
+        _cropRegion.value = region
+    }
 
     fun goToConnectionScreen() {
         refreshBondedDevices()
