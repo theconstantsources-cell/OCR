@@ -28,6 +28,9 @@ class MainActivity : ComponentActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 add(Manifest.permission.BLUETOOTH_CONNECT)
                 add(Manifest.permission.BLUETOOTH_ADVERTISE)
+                // Needed for adapter.cancelDiscovery() in BluetoothSppManager.connectTo() -
+                // without it, connecting throws a SecurityException on Android 12+.
+                add(Manifest.permission.BLUETOOTH_SCAN)
             }
         }.toTypedArray()
 
