@@ -151,8 +151,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val bitmap = _capturedBitmap.value
         viewModelScope.launch {
             _lastSendSucceeded.value = null
-            // Trailing tab so, e.g., an Excel selection advances to the next cell.
-            val succeeded = sppManager.sendText(approvedText + "\t")
+            // Trailing newline so the cursor drops to the next line/row once the whole
+            // scan is typed out, ready for the next one.
+            val succeeded = sppManager.sendText(approvedText + "\n")
             _lastSendSucceeded.value = succeeded
 
             if (bitmap != null) {
